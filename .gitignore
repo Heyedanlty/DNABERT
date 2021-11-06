@@ -15,3 +15,7 @@ src/transformers/data/metrics/__pycache__
 src/transformers/data/processors/__pycache__
 src/transformers/__pycache__
 src/transformers.egg-info
+
+#add by Tianyu Li
+src/transformers.egg-info/requires.txt
+src/transformers.egg-info/PKG-INFO
