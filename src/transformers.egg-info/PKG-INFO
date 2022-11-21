@@ -16,6 +16,7 @@ Description: # DNABERT
         
         Yanrong Ji, Zhihan Zhou, Han Liu, Ramana V Davuluri, DNABERT: pre-trained Bidirectional Encoder Representations from Transformers model for DNA-language in genome, Bioinformatics, 2021;, btab083, https://doi.org/10.1093/bioinformatics/btab083
         
+        
         ## 1. Environment setup
         
         We recommend you to build a python virtual environment with [Anaconda](https://docs.anaconda.com/anaconda/install/linux/). Also, please make sure you have at least one NVIDIA GPU with Linux x86_64 Driver Version >= 410.48 (compatible with CUDA 10.0). We applied distributed training on 8 NVIDIA GeForce RTX 2080 Ti with 11 GB graphic memory, and the batch size corresponds to it. If you use GPU with other specifications and memory sizes, consider adjusting your batch size accordingly.
@@ -143,6 +144,9 @@ Description: # DNABERT
         unzip 6-new-12w-0.zip
         ```
         
+        We also provide a model with `KMER=6` that is fine-tuned on the sample dataset for prediction/visulization/motif_analysis. If you use the fine-tuned model instead of fine-tuning a model by your self, please download the fine-tuned and put it under `examples/ft/6`. 
+        
+        [Fine-tuned Model](https://drive.google.com/drive/folders/15wFcukTv3ecPw9_25dcOv-bZmj-8d_-6?usp=sharing)
         
         
         #### 3.3 Fine-tune with pre-trained model
@@ -154,8 +158,8 @@ Description: # DNABERT
         
         export KMER=6
         export MODEL_PATH=PATH_TO_THE_PRETRAINED_MODEL
-        export DATA_PATH=sample_data/ft/prom-core/$KMER
-        export OUTPUT_PATH=./ft/prom-core/$KMER
+        export DATA_PATH=sample_data/ft/$KMER
+        export OUTPUT_PATH=./ft/$KMER
         
         python run_finetune.py \
             --model_type dna \
@@ -165,11 +169,11 @@ Description: # DNABERT
             --do_train \
             --do_eval \
             --data_dir $DATA_PATH \
-            --max_seq_length 75 \
-            --per_gpu_eval_batch_size=16   \
-            --per_gpu_train_batch_size=16   \
+            --max_seq_length 100 \
+            --per_gpu_eval_batch_size=32   \
+            --per_gpu_train_batch_size=32   \
             --learning_rate 2e-4 \
-            --num_train_epochs 3.0 \
+            --num_train_epochs 5.0 \
             --output_dir $OUTPUT_PATH \
             --evaluate_during_training \
             --logging_steps 100 \
@@ -183,6 +187,10 @@ Description: # DNABERT
         
         Add --fp16 tag if you want to perfrom mixed precision. (You have to install the 'apex' from source first).
         
+        We also provide a model with `KMER=6` that is fine-tuned on the sample dataset for prediction/visulization/motif_analysis. If you use the fine-tuned model instead of fine-tuning a model by your self, please download the fine-tuned and put it under `examples/ft/6`. 
+        
+        [Fine-tuned Model](https://drive.google.com/drive/folders/15wFcukTv3ecPw9_25dcOv-bZmj-8d_-6?usp=sharing)
+        
         
         
         ## 4. Prediction
@@ -191,9 +199,9 @@ Description: # DNABERT
         
         ```$
         export KMER=6
-        export MODEL_PATH=./ft/prom-core/$KMER
-        export DATA_PATH=sample_data/ft/prom-core/$KMER
-        export PREDICTION_PATH=./result/prom-core/$KMER
+        export MODEL_PATH=./ft/$KMER
+        export DATA_PATH=sample_data/ft/$KMER
+        export PREDICTION_PATH=./result/$KMER
         
         python run_finetune.py \
             --model_type dna \
@@ -225,9 +233,9 @@ Description: # DNABERT
         
         ```
         export KMER=6
-        export MODEL_PATH=./ft/prom-core/$KMER
-        export DATA_PATH=sample_data/ft/prom-core/$KMER
-        export PREDICTION_PATH=./result/prom-core/$KMER
+        export MODEL_PATH=./ft/$KMER
+        export DATA_PATH=sample_data/ft/$KMER
+        export PREDICTION_PATH=./result/$KMER
         
         python run_finetune.py \
             --model_type dna \
@@ -259,9 +267,9 @@ Description: # DNABERT
         cd ../motif
         
         export KMER=6
-        export DATA_PATH=../examples/sample_data/ft/prom-core/$KMER
-        export PREDICTION_PATH=../examples/result/prom-core/$KMER
-        export MOTIF_PATH=./result/prom-core/$KMER
+        export DATA_PATH=../examples/sample_data/ft/$KMER
+        export PREDICTION_PATH=../examples/result/$KMER
+        export MOTIF_PATH=./result/$KMER
         
         python find_motifs.py \
             --data_dir $DATA_PATH \
@@ -285,20 +293,20 @@ Description: # DNABERT
         
         ```
         cd ../SNP
-        python mutate_seqs.py ./../examples/sample_data/ft/prom-core/6/dev.tsv ./examples/ --mut_file ./example_mut_file.txt --k 6
+        python mutate_seqs.py ./../examples/sample_data/ft/6/dev.tsv ./examples/ --mut_file ./example_mut_file.txt --k 6
         ```
         Alternatively, we can choose to leave the `--mut_file` argument blank, where the program would try to perform substitution of all bases to the four possible nucleotides ('A', 'T', 'C', or 'G') for all sequences. This would be useful for plotting a mutation heatmap as included in the paper. **Note that this would be slow if the `dev.tsv` contains a lot of sequences or the input sequences are very long, as the command would try to perform mutation on all possible locations of them**.
         
         ```
         cd ../SNP
-        python mutate_seqs.py ./../examples/sample_data/ft/prom-core/6/dev.tsv ./examples/ --k 6
+        python mutate_seqs.py ./../examples/sample_data/ft/6/dev.tsv ./examples/ --k 6
         ```
         
         After that, we can again predict on the generated sequences. **Note: if you have insertion/deletions in your `mut_file.txt`, consider changing the `max_seq_length` we use when making predictions.**
         
         ```
         export KMER=6
-        export MODEL_PATH=../examples/ft/prom-core/$KMER
+        export MODEL_PATH=../examples/ft/$KMER
         export DATA_PATH=examples
         export PREDICTION_PATH=examples
         
@@ -313,7 +321,6 @@ Description: # DNABERT
             --per_gpu_pred_batch_size=128   \
             --output_dir $MODEL_PATH \
             --predict_dir $PREDICTION_PATH \
-            --fp16 \
             --n_process 48
         ```
         
@@ -321,14 +328,25 @@ Description: # DNABERT
         
         ```
         python SNP.py \
-            --orig_seq_file ../examples/sample_data/ft/prom-core/6/dev.tsv \
-            --orig_pred_file ../examples/result/prom-core/6/pred_results.npy \
+            --orig_seq_file ../examples/sample_data/ft/6/dev.tsv \
+            --orig_pred_file ../examples/result/6/pred_results.npy \
             --mut_seq_file examples/dev.tsv \
             --mut_pred_file examples/pred_results.npy \
             --save_file_dir examples
         ```
         
         This would save a `mutations.tsv` file under `save_file_dir`, that contains index of original sequence (in original `dev.tsv`), original sequence and predictions, mutated sequence and predictions, as well as the difference score and log odds ratio of the change in every case.
+        
+        
+        ## Q&A
+        
+        #### 1. I cannot start training the model/I have installation issues for the dependencies.
+        
+        Please kindly make sure that you satisfied all system requirements for DNABERT, and that you have a conda environment properly set up. We have recently successfully tested our pipeline on Amazon EC2 Deep Learning AMI (Ubuntu 18.04). As an option, you could compare your system/environment setup with this AMI.
+        
+        #### 2. Can DNABERT run on sequences longer than 512?
+        
+        #### 3. Can DNABERT be extended to multi-class classification?
         
 Keywords: NLP deep learning transformer pytorch tensorflow BERT GPT GPT-2 google openai CMU
 Platform: UNKNOWN

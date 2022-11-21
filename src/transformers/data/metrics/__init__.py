@@ -94,6 +94,77 @@ if _has_sklearn:
             "spearmanr": spearman_corr,
             "corr": (pearson_corr + spearman_corr) / 2,
         }
+    
+    def acc_f1_mcc_auc_pre_rec_forMultiLabel(preds, labels, probs):
+        from collections import defaultdict
+        import math
+        def self_acc_f1_pre_rec(y_true, y_pred):
+            num_batch = len(y_true)
+            num_labels = len(y_true[0])
+            confusion_matrix = [defaultdict(int) for i in range(num_labels)]
+            for i in range(num_batch):
+                for j in range(num_labels):
+                    if y_true[i][j] and y_pred[i][j]:
+                        confusion_matrix[j]["TP"] += 1
+                    elif y_true[i][j] and not y_pred[i][j]:
+                        confusion_matrix[j]["FN"] += 1
+                    elif not y_true[i][j] and y_pred[i][j]:
+                        confusion_matrix[j]["FP"] += 1
+                    else:
+                        confusion_matrix[j]["TN"] += 1
+            ret = [None for i in range(num_labels)]
+            for i in range(num_labels):
+                TP = confusion_matrix[i]["TP"]
+                FP = confusion_matrix[i]["FP"]
+                TN = confusion_matrix[i]["TN"]
+                FN = confusion_matrix[i]["FN"]
+                #print(TP, FP, TN, FN)
+                print(i, TP, FP, FN, TN, TP+FP, TP+FN, TP+TN)
+                precision = TP / (TP + FP) if (TP + FP) != 0 else (1.0 if (TP + FN) == 0 else 0.0)
+                recall = TP / (TP + FN) if (TP + FN) != 0 else 1
+                f1 = 2 * precision * recall / (precision + recall) if not math.isclose(precision + recall, 0) else 0.0
+                accuracy = (TP + TN) / num_batch
+                ret[i] = {
+                    "precision": precision,
+                    "recall": recall,
+                    "f1": f1,
+                    "accuracy": accuracy
+                }
+            return ret
+        tmp = self_acc_f1_pre_rec(y_true=labels, y_pred=preds)
+        num_labels = len(preds[0])
+
+        ret = dict()
+        for i in range(num_labels):
+            preds_ = np.array(preds)[:,i]
+            labels_ = np.array(labels)[:,i]
+            probs_ = np.array(probs)[:,i]
+            acc = tmp[i]["accuracy"]
+            try:
+                #auc = roc_auc_score(labels_, probs_, average="macro", multi_class="ovo")
+                auc = roc_auc_score(labels_, probs_, average=None)
+            except:
+                #print(f"{i} label is not balanced!")
+                auc = 0.0
+            f1 = tmp[i]["f1"]
+            precision = tmp[i]["precision"]
+            recall = tmp[i]["recall"]
+            ret[i] = {
+                "acc": acc,
+                "auc": auc,                
+                "f1": f1,
+                "precision": precision,
+                "recall": recall
+            }
+
+        ans = defaultdict(list)
+        for i in range(num_labels):
+            for k in ret[i]:
+                ans[k].append(ret[i][k])
+        for k in ans:
+            ans[k] = np.array(ans[k])
+        return ans
+
 
     def glue_compute_metrics(task_name, preds, labels, probs=None):
         assert len(preds) == len(labels)
@@ -126,6 +197,8 @@ if _has_sklearn:
             return {"acc": simple_accuracy(preds, labels)}
         elif task_name == "hans":
             return {"acc": simple_accuracy(preds, labels)}
+        elif task_name == "dnaenhancer":
+            return acc_f1_mcc_auc_pre_rec_forMultiLabel(preds, labels, probs)
         else:
             raise KeyError(task_name)
 
