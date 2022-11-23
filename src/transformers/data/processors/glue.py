@@ -599,12 +599,9 @@ class DnaEnhancerProcessor(DataProcessor):
     """Processor for the DNA promoter data"""
 
     def get_labels(self):
-        return ["isEnhancer", "branchial_arch", "cranial_nerve", "dorsal_root_ganglion", "ear",
-                "eye", "facial_mesenchyme", "forebrain", "genital_tubercle", "heart",
-                "hindbrain_(rhombencephalon)", "limb", "melanocytes", "midbrain_(mesencephalon)", "neural_tube",
-                "nose", "other", "somite", "tail", "trigeminal_V_(ganglion,_cranial)"
-                ]
-        # len(labels) = 20
+        return ['isEnhancer', 'adipose_tissue', 'gastrocnemius_medialis', 'heart_ventricle', 'hepatocyte', 'osteoblast']
+                
+        # len(labels) = 6
 
     def get_train_examples(self, data_dir):
         logger.info("LOOKING AT {}".format(os.path.join(data_dir, "train.tsv")))
