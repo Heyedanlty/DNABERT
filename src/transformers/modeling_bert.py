@@ -2161,7 +2161,7 @@ class BertForEnhancerClassificationCat(BertPreTrainedModel):
                 def __init__(self, weight=None, size_average=True):
                     super(FocalLoss, self).__init__()
                 
-                def forward(self, inputs, targets ,alpha=0.8, gamma=2):
+                def forward(self, inputs, targets ,alpha=0.6, gamma=2):
                     inputs = torch.sigmoid(inputs)
                     inputs = inputs.view(-1)
                     targets = targets.view(-1)
