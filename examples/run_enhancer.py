@@ -1001,6 +1001,8 @@ def main():
     parser.add_argument("--server_ip", type=str, default="", help="For distant debugging.")
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
 
+    parser.add_argument("--focal_alpha", type=str, default=None, help="set different alpha for different label in the focal_loss function")
+
 
     args = parser.parse_args()
 
@@ -1106,6 +1108,7 @@ def main():
             config=config,
             cache_dir=args.cache_dir if args.cache_dir else None,
         )
+        model.setAlpha(args.focal_alpha)
         logger.info('finish loading model')
 
         if args.local_rank == 0:
@@ -1141,6 +1144,7 @@ def main():
 
         # Load a trained model and vocabulary that you have fine-tuned
         model = model_class.from_pretrained(args.output_dir)
+        model.setAlpha(args.focal_alpha)
         tokenizer = tokenizer_class.from_pretrained(args.output_dir)
         model.to(args.device)
 
@@ -1173,6 +1177,7 @@ def main():
         logger.info("Predict using the following checkpoint: %s", checkpoint)
         prefix = ''
         model = model_class.from_pretrained(checkpoint)
+        model.setAlpha(args.focal_alpha)
         model.to(args.device)
         prediction = predict(args, model, tokenizer, prefix=prefix)
 
@@ -1209,6 +1214,7 @@ def main():
                 config=config,
                 cache_dir=args.cache_dir if args.cache_dir else None,
             )
+            model.setAlpha(args.focal_alpha)
             model.to(args.device)
             attention_scores, probs = visualize(args, model, tokenizer, prefix=prefix, kmer=kmer)
             if scores is not None:
@@ -1248,6 +1254,7 @@ def main():
                 config=config,
                 cache_dir=args.cache_dir if args.cache_dir else None,
             )
+            model.setAlpha(args.focal_alpha)
             model.to(args.device)
             if kmer == 3:
                 args.data_dir = os.path.join(args.data_dir, str(kmer))

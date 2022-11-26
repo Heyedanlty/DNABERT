@@ -2061,6 +2061,16 @@ class BertForEnhancerClassificationCat(BertPreTrainedModel):
 
         self.init_weights()
 
+    def setAlpha(self, alpha = None):
+        if alpha is None:
+            self.alpha = [0.5 for i in range(self.num_labels)]
+        else:
+            if alpha.startswith('['):
+                self.alpha = list(map(float, alpha[1:-1].split()))
+            else:
+                self.alpha = [float(alpha) for i in range(self.num_labels)]
+        return self.alpha
+
     @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
     def forward(
         self,
@@ -2158,9 +2168,9 @@ class BertForEnhancerClassificationCat(BertPreTrainedModel):
         if labels is not None:
             import torch.nn.functional as F
             class FocalLoss(nn.Module):
-                def __init__(self, weight=None, size_average=True, num_labels = 1):
+                def __init__(self, alpha=None, size_average=True, num_labels = 1):
                     self.num_labels = num_labels
-                    self.weight = torch.tensor(weight)
+                    self.alpha = torch.tensor(alpha)
                     super(FocalLoss, self).__init__()
                 
                 def forward(self, inputs, targets ,alpha=0.6, gamma=2):
@@ -2177,17 +2187,16 @@ class BertForEnhancerClassificationCat(BertPreTrainedModel):
 
                     inputs = inputs.view(batch_size, self.num_labels)
                     targets = targets.view(batch_size, self.num_labels)
-                    weight = self.weight.view(1, self.num_labels)
-                    weight = weight.to(device = targets.device)
+                    alpha = self.alpha.view(1, self.num_labels)
+                    alpha = alpha.to(device = targets.device)
                     BCE = F.binary_cross_entropy(inputs.float(), targets.float(), reduce = False)
                     gamma_part = targets * (1 - inputs) ** gamma + (1 - targets) * inputs ** gamma
-                    alpha_part = targets * weight + (1 - targets) * (1 - weight)
+                    alpha_part = targets * alpha + (1 - targets) * (1 - alpha)
                     focal_loss = alpha_part * gamma_part * BCE
                     focal_loss = focal_loss.mean()
 
                     return focal_loss
-
-            loss_fun = FocalLoss(weight = [0.5, 0.9, 0.9, 0.9, 0.9, 0.9], num_labels = 6)
+            loss_fun = FocalLoss(alpha = self.alpha, num_labels = self.num_labels)
             loss = loss_fun(logits, labels)
             """
             if self.num_labels == 1:
