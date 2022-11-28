@@ -2096,7 +2096,7 @@ class BertForEnhancerClassificationCat(BertPreTrainedModel):
 
         self.init_weights()
 
-    def setAlpha(self, alpha = None):
+    def setFocal(self, alpha = None, weight = None):
         if alpha is None:
             self.alpha = [0.5 for i in range(self.num_labels)]
         else:
@@ -2104,7 +2104,11 @@ class BertForEnhancerClassificationCat(BertPreTrainedModel):
                 self.alpha = list(map(float, alpha[1:-1].split()))
             else:
                 self.alpha = [float(alpha) for i in range(self.num_labels)]
-        return self.alpha
+        if weight is None:
+            self.weight = [1 for i in range(self.num_labels)]
+        else:
+            self.weight = list(map(float, weight[1:-1].split()))
+        return
 
     @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
     def forward(
@@ -2202,17 +2206,8 @@ class BertForEnhancerClassificationCat(BertPreTrainedModel):
 
         outputs = (predict,) + outputs[2:]  # add hidden states and attention if they are here
         if labels is not None:
-            loss_fun = FocalLoss(alpha = self.alpha, num_labels = self.num_labels, weight = [1, 1, 1, 1, 1, 1], batch_size = batch_size)
+            loss_fun = FocalLoss(alpha = self.alpha, num_labels = self.num_labels, weight = self.weight, batch_size = batch_size)
             loss = loss_fun(predict, labels)
-            """
-            if self.num_labels == 1:
-                #  We are doing regression
-                loss_fct = MSELoss()
-                loss = loss_fct(logits.view(-1), labels.view(-1))
-            else:
-                loss_fct = CrossEntropyLoss()
-                loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            """
             outputs = (loss,) + outputs
 
         return outputs  # (loss), logits, (hidden_states), (attentions)

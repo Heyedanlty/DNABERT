@@ -1001,6 +1001,7 @@ def main():
     parser.add_argument("--server_port", type=str, default="", help="For distant debugging.")
 
     parser.add_argument("--focal_alpha", type=str, default=None, help="set different alpha for different label in the focal_loss function")
+    parser.add_argument("--focal_weight", type=str, default=None, help="set different weight for different label in the focal_loss function")
 
 
     args = parser.parse_args()
@@ -1107,7 +1108,7 @@ def main():
             config=config,
             cache_dir=args.cache_dir if args.cache_dir else None,
         )
-        model.setAlpha(args.focal_alpha)
+        model.setFocal(alpha = args.focal_alpha, weight = args.focal_weight)
         logger.info('finish loading model')
 
         if args.local_rank == 0:
@@ -1143,7 +1144,7 @@ def main():
 
         # Load a trained model and vocabulary that you have fine-tuned
         model = model_class.from_pretrained(args.output_dir)
-        model.setAlpha(args.focal_alpha)
+        model.setFocal(alpha = args.focal_alpha, weight = args.focal_weight)
         tokenizer = tokenizer_class.from_pretrained(args.output_dir)
         model.to(args.device)
 
@@ -1163,7 +1164,7 @@ def main():
             prefix = checkpoint.split("/")[-1] if checkpoint.find("checkpoint") != -1 else ""
 
             model = model_class.from_pretrained(checkpoint)
-            model.setAlpha(args.focal_alpha)
+            model.setFocal(alpha = args.focal_alpha, weight = args.focal_weight)
             model.to(args.device)            
             result = evaluate(args, model, tokenizer, prefix=prefix)
             result = dict((k + "_{}".format(global_step), v) for k, v in result.items())
@@ -1177,7 +1178,7 @@ def main():
         logger.info("Predict using the following checkpoint: %s", checkpoint)
         prefix = ''
         model = model_class.from_pretrained(checkpoint)
-        model.setAlpha(args.focal_alpha)
+        model.setFocal(alpha = args.focal_alpha, weight = args.focal_weight)
         model.to(args.device)
         prediction = predict(args, model, tokenizer, prefix=prefix)
 
@@ -1214,7 +1215,7 @@ def main():
                 config=config,
                 cache_dir=args.cache_dir if args.cache_dir else None,
             )
-            model.setAlpha(args.focal_alpha)
+            model.setFocal(alpha = args.focal_alpha, weight = args.focal_weight)
             model.to(args.device)
             attention_scores, probs = visualize(args, model, tokenizer, prefix=prefix, kmer=kmer)
             if scores is not None:
@@ -1254,7 +1255,7 @@ def main():
                 config=config,
                 cache_dir=args.cache_dir if args.cache_dir else None,
             )
-            model.setAlpha(args.focal_alpha)
+            model.setFocal(alpha = args.focal_alpha, weight = args.focal_weight)
             model.to(args.device)
             if kmer == 3:
                 args.data_dir = os.path.join(args.data_dir, str(kmer))
