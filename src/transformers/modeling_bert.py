@@ -2039,6 +2039,42 @@ class BertForEnhancerClassification(BertPreTrainedModel):
         return outputs  # (loss), logits, (hidden_states), (attentions)
 
 
+import torch.nn.functional as F
+class FocalLoss(nn.Module):
+    def __init__(self, alpha = None, num_labels = 1, gamma = 2, weight = None, batch_size = None):
+        self.num_labels = num_labels
+        self.alpha = torch.tensor(alpha)
+        self.weight = torch.tensor(weight)
+        self.batch_size = batch_size
+        self.gamma = gamma
+        super(FocalLoss, self).__init__()
+    
+    def forward(self, inputs, targets):
+        inputs = torch.sigmoid(inputs)
+        """                    
+        inputs = inputs.view(-1)                    
+        targets = targets.view(-1)                    
+        BCE = F.binary_cross_entropy(inputs.float(), targets.float(), reduce=False)
+        gamma_part = torch.abs(inputs - targets) ** gamma
+        alpha_part = torch.ones_like(targets, device=targets.device) - targets -torch.full(targets.shape, alpha, device=targets.device) + 2 * torch.full(targets.shape, alpha, device=targets.device) * targets
+        focal_loss = alpha_part * gamma_part * BCE
+        focal_loss = focal_loss.mean()
+        """
+
+        inputs = inputs.view(self.batch_size, self.num_labels)
+        targets = targets.view(self.batch_size, self.num_labels)
+        alpha = self.alpha.view(1, self.num_labels)
+        alpha = alpha.to(device = targets.device)
+        weight = self.weight.view(1, self.num_labels)
+        weight = weight.to(device = targets.device)
+        BCE = F.binary_cross_entropy(inputs.float(), targets.float(), reduce = False)
+        gamma_part = targets * (1 - inputs) ** self.gamma + (1 - targets) * inputs ** self.gamma
+        alpha_part = targets * alpha + (1 - targets) * (1 - alpha)
+        focal_loss = alpha_part * gamma_part * BCE * weight
+        focal_loss = focal_loss.mean()
+
+        return focal_loss
+
 ### not used
 @add_start_docstrings(
     """Bert Model transformer with a sequence classification/regression head on top (a linear layer on top of
@@ -2058,6 +2094,7 @@ class BertForEnhancerClassificationCat(BertPreTrainedModel):
         self.classifier1 = nn.Linear(config.hidden_size*self.split, config.hidden_size)
         self.relu = torch.nn.ReLU()
         self.classifier2 = nn.Linear(config.hidden_size, self.config.num_labels)
+        self.sigmoid = nn.Sigmoid()
 
         self.init_weights()
 
@@ -2163,41 +2200,12 @@ class BertForEnhancerClassificationCat(BertPreTrainedModel):
         pooled_output = self.relu(pooled_output)
         pooled_output = self.dropout2(pooled_output)
         logits = self.classifier2(pooled_output)
-        outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
+        predict = self.sigmoid(logits)
 
+        outputs = (predict,) + outputs[2:]  # add hidden states and attention if they are here
         if labels is not None:
-            import torch.nn.functional as F
-            class FocalLoss(nn.Module):
-                def __init__(self, alpha=None, size_average=True, num_labels = 1):
-                    self.num_labels = num_labels
-                    self.alpha = torch.tensor(alpha)
-                    super(FocalLoss, self).__init__()
-                
-                def forward(self, inputs, targets ,alpha=0.6, gamma=2):
-                    inputs = torch.sigmoid(inputs)
-                    """                    
-                    inputs = inputs.view(-1)                    
-                    targets = targets.view(-1)                    
-                    BCE = F.binary_cross_entropy(inputs.float(), targets.float(), reduce=False)
-                    gamma_part = torch.abs(inputs - targets) ** gamma
-                    alpha_part = torch.ones_like(targets, device=targets.device) - targets -torch.full(targets.shape, alpha, device=targets.device) + 2 * torch.full(targets.shape, alpha, device=targets.device) * targets
-                    focal_loss = alpha_part * gamma_part * BCE
-                    focal_loss = focal_loss.mean()
-                    """
-
-                    inputs = inputs.view(batch_size, self.num_labels)
-                    targets = targets.view(batch_size, self.num_labels)
-                    alpha = self.alpha.view(1, self.num_labels)
-                    alpha = alpha.to(device = targets.device)
-                    BCE = F.binary_cross_entropy(inputs.float(), targets.float(), reduce = False)
-                    gamma_part = targets * (1 - inputs) ** gamma + (1 - targets) * inputs ** gamma
-                    alpha_part = targets * alpha + (1 - targets) * (1 - alpha)
-                    focal_loss = alpha_part * gamma_part * BCE
-                    focal_loss = focal_loss.mean()
-
-                    return focal_loss
-            loss_fun = FocalLoss(alpha = self.alpha, num_labels = self.num_labels)
-            loss = loss_fun(logits, labels)
+            loss_fun = FocalLoss(alpha = self.alpha, num_labels = self.num_labels, weight = [1, 1, 1, 1, 1, 1], batch_size = batch_size)
+            loss = loss_fun(predict, labels)
             """
             if self.num_labels == 1:
                 #  We are doing regression

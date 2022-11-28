@@ -451,10 +451,9 @@ def evaluate(args, model, tokenizer, prefix="", evaluate=True):
             preds = np.argmax(preds, axis=1)
         elif args.output_mode == "regression":
             preds = np.squeeze(preds)
-        elif args.output_mode == "multi-label":            
-            sigmoid = torch.nn.Sigmoid()
-            probs = sigmoid(torch.tensor(preds, dtype=torch.float32)).numpy()
-            preds = sigmoid(torch.tensor(preds, dtype=torch.float32))
+        elif args.output_mode == "multi-label":
+            probs = torch.tensor(preds, dtype=torch.float32).numpy()
+            preds = torch.tensor(preds, dtype=torch.float32)
             preds = torch.gt(preds, 0.5).numpy()
 
         if args.do_ensemble_pred:
@@ -1164,7 +1163,8 @@ def main():
             prefix = checkpoint.split("/")[-1] if checkpoint.find("checkpoint") != -1 else ""
 
             model = model_class.from_pretrained(checkpoint)
-            model.to(args.device)
+            model.setAlpha(args.focal_alpha)
+            model.to(args.device)            
             result = evaluate(args, model, tokenizer, prefix=prefix)
             result = dict((k + "_{}".format(global_step), v) for k, v in result.items())
             results.update(result)
