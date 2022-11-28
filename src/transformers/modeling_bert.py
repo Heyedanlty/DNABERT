@@ -2050,7 +2050,6 @@ class FocalLoss(nn.Module):
         super(FocalLoss, self).__init__()
     
     def forward(self, inputs, targets):
-        inputs = torch.sigmoid(inputs)
         """                    
         inputs = inputs.view(-1)                    
         targets = targets.view(-1)                    
@@ -2060,7 +2059,6 @@ class FocalLoss(nn.Module):
         focal_loss = alpha_part * gamma_part * BCE
         focal_loss = focal_loss.mean()
         """
-
         inputs = inputs.view(self.batch_size, self.num_labels)
         targets = targets.view(self.batch_size, self.num_labels)
         alpha = self.alpha.view(1, self.num_labels)
