@@ -622,6 +622,35 @@ class DnaEnhancerProcessor(DataProcessor):
             examples.append(InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
 
+class SingleEnhancerProcessor(DataProcessor):
+    """Processor for the DNA promoter data"""
+
+    def __init__(self, offset = 1) -> None:
+        self.offset = offset
+        super().__init__()
+
+    def get_labels(self):
+        return ["0", "1"] 
+
+    def get_train_examples(self, data_dir):
+        logger.info("LOOKING AT {}".format(os.path.join(data_dir, "train.tsv")))
+        return self._create_examples(self._read_tsv(os.path.join(data_dir, "train.tsv")), "train")
+
+    def get_dev_examples(self, data_dir):
+        return self._create_examples(self._read_tsv(os.path.join(data_dir, "dev.tsv")), "dev")
+
+    def _create_examples(self, lines, set_type):
+        """Creates examples for the training and dev sets."""
+        examples = []
+        for (i, line) in enumerate(lines):
+            if i == 0:
+                continue
+            guid = "%s-%s" % (set_type, i)
+            text_a = line[0]
+            label = line[self.offset]
+            examples.append(InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+        return examples
+
 
 glue_tasks_num_labels = {
     "cola": 2,
@@ -637,7 +666,8 @@ glue_tasks_num_labels = {
     "dna690":2,
     "dnapair":2,
     "dnasplice":3,
-    "dnaenhancer":20,
+    "dnaenhancer":6,
+    "dnasingleenhancer":2,
 }
 
 glue_processors = {
@@ -656,6 +686,7 @@ glue_processors = {
     "dnapair": DnaPairProcessor,
     "dnasplice": DnaSpliceProcessor,
     "dnaenhancer": DnaEnhancerProcessor,
+    "dnasingleenhancer": SingleEnhancerProcessor,
 }
 
 glue_output_modes = {
@@ -674,5 +705,6 @@ glue_output_modes = {
     "dnapair": "classification",
     "dnasplice": "classification",
     "dnaenhancer": "multi-label",
+    "dnasingleenhancer": "classification",
 }
 
