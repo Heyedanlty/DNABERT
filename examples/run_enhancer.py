@@ -345,7 +345,8 @@ def train(args, train_dataset, model, tokenizer):
                         tb_writer.add_scalar(key, value, global_step)
                     print(json.dumps({**logs, **{"step": global_step}}))
                     """
-                    print(f'    {{lr: {learning_rate_scalar}, step: {global_step}, loss: {loss_scalar}}}')
+                    print(f'{{lr: {learning_rate_scalar}, step: {global_step}, loss: {loss_scalar}}}')
+                    logger.info(f'{{lr: {learning_rate_scalar}, step: {global_step}, loss: {loss_scalar}}}')
 
                 if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
                     if args.task_name == "dna690" and results["auc"] < best_auc:

@@ -2107,7 +2107,13 @@ class BertForEnhancerClassificationCat(BertPreTrainedModel):
         if weight is None:
             self.weight = [1 for i in range(self.num_labels)]
         else:
-            self.weight = list(map(float, weight[1:-1].split()))
+            if weight.startswith('['):
+                self.weight = list(map(float, weight[1:-1].split()))
+            else:
+                self.weight = [float(alpha)] + [(1-float(alpha)) / 5 for i in range(self.num_labels - 1)]
+            summation = sum(self.weight)
+            for i in range(self.num_labels):
+                self.weight[i] = self.weight[i] / summation * 6
         return
 
     @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
@@ -2206,6 +2212,7 @@ class BertForEnhancerClassificationCat(BertPreTrainedModel):
 
         outputs = (predict,) + outputs[2:]  # add hidden states and attention if they are here
         if labels is not None:
+            labels = torch.abs(labels)
             loss_fun = FocalLoss(alpha = self.alpha, num_labels = self.num_labels, weight = self.weight, batch_size = batch_size)
             loss = loss_fun(predict, labels)
             outputs = (loss,) + outputs
