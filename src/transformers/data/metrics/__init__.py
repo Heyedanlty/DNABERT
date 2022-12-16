@@ -163,11 +163,11 @@ if _has_sklearn:
                 "recall": recall
             }
         ret[num_labels] = {
-            "acc" : sum([r["acc"] for r in ret[1: num_labels]]) / (num_labels - 1),
-            "auc" : sum([r["auc"] for r in ret[1: num_labels]]) / (num_labels - 1),
-            "f1": sum([r["f1"] for r in ret[1: num_labels]]) / (num_labels - 1),
-            "precision" : sum([r["precision"] for r in ret[1 : num_labels]]) / (num_labels - 1),
-            "recall" : sum([r["recall"] for r in ret[1 : num_labels]]) / (num_labels - 1),
+            "acc" : sum([ret[i]["acc"] for i in range(1,num_labels)]) / (num_labels - 1),
+            "auc" : sum([ret[i]["auc"] for i in range(1, num_labels)]) / (num_labels - 1),
+            "f1": sum([ret[i]["f1"] for i in range(1, num_labels)]) / (num_labels - 1),
+            "precision" : sum([ret[i]["precision"] for i in range(1, num_labels)]) / (num_labels - 1),
+            "recall" : sum([ret[i]["recall"] for i in range(1, num_labels)]) / (num_labels - 1),
         }
         ans = defaultdict(list)
         for i in range(num_labels + 1):
