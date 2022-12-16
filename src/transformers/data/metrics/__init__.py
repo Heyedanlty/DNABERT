@@ -142,16 +142,29 @@ if _has_sklearn:
 
         ret = dict()
         for i in range(num_labels):
-            preds_ = np.array(preds)[:,i]
-            labels_ = np.array(labels)[:,i]
-            probs_ = np.array(probs)[:,i]
-            acc = tmp[i]["accuracy"]
+            # calculate auc
+            if i == 0:
+                labels_auc = np.array(labels)[:,i]
+                probs_auc = np.array(probs)[:,i]
+            else:
+                labels_auc = []
+                probs_auc = []
+                for j in range(len(preds)):
+                    if labels[j][0] == 1 and labels[j][i] != 1:
+                        continue
+                    else:
+                        labels_auc.append(labels[j][i])
+                        probs_auc.append(probs[j][i])
+                labels_auc = np.array(labels_auc)
+                probs_auc = np.array(probs_auc)            
             try:
                 #auc = roc_auc_score(labels_, probs_, average="macro", multi_class="ovo")
-                auc = roc_auc_score(labels_, probs_, average=None)
+                auc = roc_auc_score(labels_auc, probs_auc, average=None)
             except:
                 #print(f"{i} label is not balanced!")
                 auc = 0.0
+
+            acc = tmp[i]["accuracy"]
             f1 = tmp[i]["f1"]
             precision = tmp[i]["precision"]
             recall = tmp[i]["recall"]
