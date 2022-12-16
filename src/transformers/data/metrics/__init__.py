@@ -183,12 +183,12 @@ if _has_sklearn:
             "recall" : sum([ret[i]["recall"] for i in range(1, num_labels)]) / (num_labels - 1),
         }
         ans = defaultdict(list)
-        for i in range(num_labels + 1):
+        for i in range(num_labels):
             for k in ret[i]:
                 ans[k].append(ret[i][k])
         for k in ans:
             ans[k] = np.array(ans[k])
-        return ans
+        return ans, ret[num_labels] # average
 
 
     def glue_compute_metrics(task_name, preds, labels, probs=None):

@@ -460,7 +460,7 @@ def evaluate(args, model, tokenizer, prefix="", evaluate=True):
         if args.do_ensemble_pred:
             result = compute_metrics(eval_task, preds, out_label_ids, probs[:,1])
         else:
-            result = compute_metrics(eval_task, preds, out_label_ids, probs)
+            result, average_result = compute_metrics(eval_task, preds, out_label_ids, probs)
         results.update(result)
         
         if args.task_name == "dna690":
@@ -479,6 +479,14 @@ def evaluate(args, model, tokenizer, prefix="", evaluate=True):
             for key in sorted(result.keys()):
                 logger.info("  %s = %s", key, str(result[key]))
                 eval_result = eval_result + str(result[key]) + " "
+            
+            logger.info("***** Average results {} *****".format(prefix))
+            eval_result = eval_result + "{"
+            for key in sorted(average_result.keys()):
+                logger.info("  %s = %s", key, str(average_result[key]))
+                eval_result = eval_result + str(average_result[key]) + " "
+            eval_result = eval_result[:-1] + "}"
+            
             writer.write(eval_result + "\n")
 
     if args.do_ensemble_pred:
