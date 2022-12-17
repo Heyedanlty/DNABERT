@@ -2212,7 +2212,12 @@ class BertForEnhancerClassificationCat(BertPreTrainedModel):
 
         outputs = (predict,) + outputs[2:]  # add hidden states and attention if they are here
         if labels is not None:
-            labels = torch.abs(labels)
+            # labels :
+            # 0: real negative
+            # 1: real positive
+            # 2: overlap positive
+            # 3: overlap negative
+            labels = (labels * (labels - 3)) // -2
             loss_fun = FocalLoss(alpha = self.alpha, num_labels = self.num_labels, weight = self.weight, batch_size = batch_size)
             loss = loss_fun(predict, labels)
             outputs = (loss,) + outputs
